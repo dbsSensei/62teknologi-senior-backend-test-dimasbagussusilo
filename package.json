@@ -1,0 +1,25 @@
+{
+  "name": "62teknologi-senior-backend-test-dimasbagussusilo",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node ./bin/www",
+    "dev": "nodemon ./bin/www",
+    "test": "jest"
+  },
+  "dependencies": {
+    "cookie-parser": "~1.4.4",
+    "debug": "~2.6.9",
+    "dotenv": "^16.0.3",
+    "ejs": "^3.1.8",
+    "express": "~4.16.1",
+    "morgan": "~1.9.1",
+    "pg": "^8.8.0",
+    "pg-hstore": "^2.3.4",
+    "sequelize": "^6.25.3",
+    "sequelize-cli": "^6.5.1"
+  },
+  "devDependencies": {
+    "jest": "^29.3.1"
+  }
+}
