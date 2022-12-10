@@ -45,7 +45,7 @@ module.exports = {
                         center: {
                             latitude: centerCoordinate.lat, longitude: centerCoordinate.lng
                         }
-                    }, total: businesses.count
+                    }, total: businesses.count, current_page: page,
                 },
 
             });
