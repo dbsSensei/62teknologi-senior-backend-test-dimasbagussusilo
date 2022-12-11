@@ -29,13 +29,20 @@ module.exports = {
 
     findAll: async (options) => {
         try {
-            const {limit, offset, price, categories, coordinates, location, radius} = options;
+            const {limit, offset, term, price, categories, coordinates, location, radius} = options;
             delete options.limit
             delete options.offset
             delete options.categories
             delete options.location
             delete options.coordinates
             delete options.radius
+            delete options.term
+
+            if (term) {
+                options.name = {
+                    [Op.iLike]: `%${term}%`
+                }
+            }
 
             if (price) {
                 options.price = {
@@ -58,6 +65,7 @@ module.exports = {
 
             const locationOptions = {}
             if (location) {
+                // TODO improve location filter
                 locationOptions.display_address = location
             }
 

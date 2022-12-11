@@ -28,7 +28,7 @@ module.exports = {
 
     getAllBusiness: async (req, res) => {
         try {
-            const {page = 1, limit = 10, categories, latitude, longitude, radius, location, price} = req.query;
+            const {page = 1, limit = 10, term, categories, latitude, longitude, radius, location, price} = req.query;
             let coordinates = {
                 latitude, longitude
             }
@@ -50,7 +50,7 @@ module.exports = {
             }
 
             const businesses = await businessServices.findAll({
-                limit, offset: (+page - 1) * +limit, categories, location, coordinates, radius, price,
+                limit, offset: (+page - 1) * +limit, term, categories, location, coordinates, radius, price,
             });
 
             const centerCoordinate = findCenterCoordinate(JSON.parse(JSON.stringify(businesses.rows)).map(business => {
