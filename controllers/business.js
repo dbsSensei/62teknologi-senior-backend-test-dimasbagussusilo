@@ -6,6 +6,26 @@ const businessLocationServices = require('../services/businessLocation')
 const {findCenterCoordinate} = require("../utils/functions");
 
 module.exports = {
+    getBusinessDetails: async (req, res) => {
+        try {
+            const business = await businessServices.findOne( {id: req.params.id}, true)
+            if (!business) {
+                return res.status(404).send({
+                    status: false, message: `cannot found business with id: ${req.body.id}`, errors: []
+                })
+            }
+
+            return res.send({
+                status: true, message: "success search business data", data: business
+            });
+        } catch (errors) {
+            console.log("Error getBusinessDetails:", errors)
+            res.status(500).send({
+                status: false, message: "internal server errors!", errors
+            })
+        }
+    },
+
     getAllBusiness: async (req, res) => {
         try {
             const {page = 1, limit = 10, categories, latitude, longitude, radius, location, price} = req.query;
@@ -106,7 +126,7 @@ module.exports = {
             delete req.body.coordinates
             delete req.body.location
 
-            const business = await businessServices.findOne({where: {id: req.body.id}})
+            const business = await businessServices.findOne({id: req.body.id})
             if (!business) {
                 return res.status(404).send({
                     status: false, message: `cannot found business with id: ${req.body.id}`, errors: []

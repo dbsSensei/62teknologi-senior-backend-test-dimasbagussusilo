@@ -2,11 +2,25 @@ const {Op} = require("sequelize");
 const {Business, BusinessCategory, BusinessCoordinate, BusinessLocation, sequelize} = require('../models');
 
 module.exports = {
-    findOne: async (options) => {
+    findOne: async (options, withRelation = false) => {
         try {
-            const business = await Business.findOne({
+            const params = {
                 where: options,
-            });
+            }
+
+            if (withRelation) {
+                params.include = [{
+                    model: BusinessCategory, as: "categories", attributes: ["alias", "title"],
+                }, {
+                    model: BusinessCoordinate, as: "coordinates", attributes: ["latitude", "longitude"],
+                }, {
+                    model: BusinessLocation,
+                    as: "location",
+                    attributes: ["address1", "address2", "address3", "city", "country", "display_address", "state", "zip_code", "cross_streets",],
+                }]
+            }
+
+            const business = await Business.findOne(params);
             return business;
         } catch (errors) {
             return errors
@@ -80,10 +94,7 @@ module.exports = {
 
             let businesses = await Business.findAndCountAll({
                 where: options, limit, offset, include: [{
-                    model: BusinessCategory,
-                    as: "categories",
-                    attributes: ["alias", "title"],
-                    where: categoryOptions
+                    model: BusinessCategory, as: "categories", attributes: ["alias", "title"], where: categoryOptions
                 }, {
                     model: BusinessCoordinate,
                     as: "coordinates",
@@ -94,8 +105,7 @@ module.exports = {
                     as: "location",
                     attributes: ["address1", "address2", "address3", "city", "country", "display_address", "state", "zip_code", "cross_streets",],
                     where: locationOptions
-                }],
-                distinct: true
+                }], distinct: true
             });
 
             if (topFiveCoordinatesByRadius) {
