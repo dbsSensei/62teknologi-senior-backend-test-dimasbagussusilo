@@ -28,13 +28,13 @@ module.exports = {
 
     getAllBusiness: async (req, res) => {
         try {
-            const {page = 1, limit = 10, term, categories, latitude, longitude, radius, location, price} = req.query;
+            const {page = 1, limit = 10, term, categories, latitude, longitude, radius, location, price, sort_by} = req.query;
             let coordinates = {
                 latitude, longitude
             }
 
             const coordinatesLength = Object.values(coordinates).filter(coordinate => coordinate).length
-            const isInvalidCoordinates = coordinatesLength >= 1 && coordinatesLength < 2
+            const isInvalidCoordinates = !coordinatesLength || coordinatesLength >= 1 && coordinatesLength < 2
             if (!coordinatesLength) {
                 coordinates = null
             }
@@ -43,14 +43,9 @@ module.exports = {
                     status: false, message: "invalid location format", errors: []
                 })
             }
-            if (radius && !coordinatesLength) {
-                return res.status(400).send({
-                    status: false, message: "radius need valid coordinates", errors: []
-                })
-            }
 
             const businesses = await businessServices.findAll({
-                limit, offset: (+page - 1) * +limit, term, categories, location, coordinates, radius, price,
+                limit, offset: (+page - 1) * +limit, term, categories, location, coordinates, radius, price, sort_by,
             });
 
             const centerCoordinate = findCenterCoordinate(JSON.parse(JSON.stringify(businesses.rows)).map(business => {

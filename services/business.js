@@ -29,7 +29,7 @@ module.exports = {
 
     findAll: async (options) => {
         try {
-            const {limit, offset, term, price, categories, coordinates, location, radius} = options;
+            const {limit, offset, term, price, categories, coordinates, location, radius, sort_by} = options;
             delete options.limit
             delete options.offset
             delete options.categories
@@ -37,6 +37,7 @@ module.exports = {
             delete options.coordinates
             delete options.radius
             delete options.term
+            delete options.sort_by
 
             if (term) {
                 options.name = {
@@ -65,39 +66,40 @@ module.exports = {
 
             const locationOptions = {}
             if (location) {
-                // TODO improve location filter
-                locationOptions.display_address = location
-            }
-
-            let coordinateOptions = {}
-            if (coordinates) {
-                coordinateOptions = {
-                    latitude: coordinates.latitude, longitude: coordinates.longitude,
+                locationOptions.display_address = {
+                    [Op.iLike]:`%${location}%`
                 }
             }
 
-            let topFiveCoordinatesByRadius;
-            if (radius) {
-                const latitude = 41.7873382568359;
-                const longitude = -123.051551818848;
-
-                const haversine = `(
+            const distanceQuery = `(
                     6371 * acos(
-                        cos(radians(${latitude}))
+                        cos(radians(${coordinates.latitude}))
                         * cos(radians(latitude))
-                        * cos(radians(longitude) - radians(${longitude}))
-                        + sin(radians(${latitude})) * sin(radians(latitude))
+                        * cos(radians(longitude) - radians(${coordinates.longitude}))
+                        + sin(radians(${coordinates.latitude})) * sin(radians(latitude))
                     )
                 )`;
-                topFiveCoordinatesByRadius = JSON.parse(JSON.stringify(await BusinessCoordinate.findAll({
-                    attributes: ['business_id', [sequelize.literal(haversine), 'distance'],],
-                    order: sequelize.col('distance'),
-                    limit: 5
-                })));
 
+            let coordinateOptions = {}
+            if (radius) {
                 coordinateOptions = {
-                    business_id: {[Op.in]: topFiveCoordinatesByRadius.map(coord => coord.business_id)}
+                    [Op.and]: [
+                        sequelize.literal(`${distanceQuery} <= ${radius}`)
+                    ]
                 }
+            }
+
+            const sortOption = []
+            switch (sort_by) {
+                case "highest_rating":
+                    sortOption.push(["rating", "DESC"])
+                    break
+                case "most_reviewed":
+                    sortOption.push(["rating", "DESC"])
+                    break
+                case "nearest":
+                    sortOption.push(["distance", "ASC"])
+                    break
             }
 
             let businesses = await Business.findAndCountAll({
@@ -106,24 +108,15 @@ module.exports = {
                 }, {
                     model: BusinessCoordinate,
                     as: "coordinates",
-                    attributes: ["latitude", "longitude"],
+                    attributes: ["latitude", "longitude", [sequelize.literal(distanceQuery), 'distance']],
                     where: coordinateOptions
                 }, {
                     model: BusinessLocation,
                     as: "location",
                     attributes: ["address1", "address2", "address3", "city", "country", "display_address", "state", "zip_code", "cross_streets",],
                     where: locationOptions
-                }], distinct: true
+                }], distinct: true, order: sortOption,
             });
-
-            if (topFiveCoordinatesByRadius) {
-                businesses = JSON.parse(JSON.stringify(businesses)).map(business => {
-                    return {
-                        ...business,
-                        distance: topFiveCoordinatesByRadius.filter(coord => coord.business_id === business.id)[0].distance
-                    }
-                }).sort((a, b) => a.distance - b.distance)
-            }
 
             return businesses;
         } catch (errors) {
